@@ -3,10 +3,12 @@ package com.franklinux.spring.boot.backend.apirest.models.services;
 import com.franklinux.spring.boot.backend.apirest.models.dao.IClientDAO;
 import com.franklinux.spring.boot.backend.apirest.models.entity.Client;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Service
 public class ClientService implements IClientService {
 
     @Autowired
