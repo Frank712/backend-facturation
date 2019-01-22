@@ -1,6 +1,9 @@
 package com.franklinux.spring.boot.backend.apirest.models.entity;
 
 import javax.persistence.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -12,9 +15,16 @@ public class Client implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotEmpty(message = "must not be empty")
+    @Size(min = 4, max = 20, message = "size must be between 4 and 20 characters")
     @Column(nullable = false)
     private String name;
+
+    @NotEmpty(message = "must not be empty")
     private String lastname;
+
+    @NotEmpty(message = "must not be empty")
+    @Email(message = "must be a well-formed email address")
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -26,6 +36,7 @@ public class Client implements Serializable {
     public void prePersist(){
         createdAt = new Date();
     }
+
     public Long getId() {
         return id;
     }

@@ -6,12 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.validation.Valid;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @CrossOrigin(origins = {"http://localhost:4200"})
 @RestController
@@ -47,14 +48,23 @@ public class ClientRESTController {
     }
 
     @PostMapping("/clients")
-    public ResponseEntity<?> create( @RequestBody Client client ){
+    public ResponseEntity<?> create(@Valid @RequestBody Client client, BindingResult result){
         Client newClient = null;
         Map<String, Object> response = new HashMap<>();
+        //  Verify if the result has errors
+        if( result.hasErrors() ){
+            List<String> errors = result.getFieldErrors().stream()
+                    .map( error -> "The field '" + error.getField() + "' "  + error.getDefaultMessage() )
+                    .collect(Collectors.toList());
+
+            response.put("errors", errors);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
         try {
             newClient = clientService.save( client );
         } catch ( DataAccessException e ) {
             response.put("message", "Error while try to save on database");
-            response.put("error", e.getMessage().concat(": ").concat( e.getMostSpecificCause().getMessage()));
+            response.put("error", e.getMostSpecificCause().getMessage());
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         response.put("message", "The client ".concat( newClient.getName() ).concat( " has been created successfully" ) );
@@ -63,16 +73,24 @@ public class ClientRESTController {
     }
 
     @PutMapping("/clients/{id}")
-    public ResponseEntity<?> update(@RequestBody Client client, @PathVariable Long id) {
+    public ResponseEntity<?> update(@Valid @RequestBody Client client, BindingResult result, @PathVariable Long id ) {
         Client currentClient = null;
         Client clientSaved = null;
         Map<String, Object> response = new HashMap<>();
+        //  Verify if the result has errors
+        if( result.hasErrors() ){
+            List<String> errors = result.getFieldErrors().stream()
+                    .map( error -> "The field '" + error.getField() + "' "  + error.getDefaultMessage() )
+                    .collect(Collectors.toList());
+            response.put("errors", errors);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
         //  Try to get the current client in database
         try {
             currentClient = clientService.findByID(id);
         } catch ( DataAccessException e ) {
             response.put("message", "Error while try to search user on database");
-            response.put("error", e.getMessage().concat(": ").concat( e.getMostSpecificCause().getMessage()));
+            response.put("error", e.getMostSpecificCause().getMessage());
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         if( currentClient == null ){
@@ -87,7 +105,8 @@ public class ClientRESTController {
             clientSaved = clientService.save( currentClient );
         } catch( DataAccessException e ){
             response.put("message", "Error while try to salve user on database");
-            response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
+            //response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
+            response.put("error", e.getMostSpecificCause().getMessage());
             return new ResponseEntity(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         response.put("message", "Client ID: ".concat(id.toString()).concat(" has been updated successfully!"));
