@@ -3,6 +3,7 @@ package com.franklinux.spring.boot.backend.apirest.models.entity;
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.Date;
@@ -25,17 +26,20 @@ public class Client implements Serializable {
 
     @NotEmpty(message = "must not be empty")
     @Email(message = "must be a well-formed email address")
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = false)
     private String email;
 
+    @NotNull(message = "must not be null")
     @Column(name = "created_at")
     @Temporal(TemporalType.DATE)
     private Date createdAt;
 
-    @PrePersist
+    private String img;
+
+    /*@PrePersist
     public void prePersist(){
         createdAt = new Date();
-    }
+    }*/
 
     public Long getId() {
         return id;
@@ -78,4 +82,12 @@ public class Client implements Serializable {
     }
 
     private static final long serialVersionUID = 1L;
+
+    public String getImg() {
+        return img;
+    }
+
+    public void setImg(String img) {
+        this.img = img;
+    }
 }

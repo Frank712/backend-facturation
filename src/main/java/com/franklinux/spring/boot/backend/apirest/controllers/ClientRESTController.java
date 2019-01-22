@@ -10,10 +10,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -110,6 +115,7 @@ public class ClientRESTController {
         currentClient.setName(client.getName());
         currentClient.setLastname(client.getLastname());
         currentClient.setEmail(client.getEmail());
+        currentClient.setCreatedAt( client.getCreatedAt());
         try {
             clientSaved = clientService.save( currentClient );
         } catch( DataAccessException e ){
@@ -127,8 +133,11 @@ public class ClientRESTController {
     @DeleteMapping("/clients/{id}")
     public ResponseEntity<?> delete( @PathVariable Long id ){
         Map<String, Object> response = new HashMap<>();
-
+        Client client = clientService.findByID(id);
+        String messageDel = null;
         try {
+            String nameFileOld = client.getImg();
+            messageDel = deletedOldImg( nameFileOld ) ? "The old image has been deleted" : "The old image can not deleted";
             clientService.delete(id);
         }
         catch ( DataAccessException e) {
@@ -137,6 +146,47 @@ public class ClientRESTController {
             return new ResponseEntity(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         response.put("message", "The client ID: ".concat(id.toString()).concat(" has been deleted!"));
+        response.put("deleted", messageDel);
         return new ResponseEntity(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/clients/upload")
+    public ResponseEntity<?> upload(@RequestParam MultipartFile file, @RequestParam Long id) {
+        Map<String, Object> response = new HashMap<>();
+        Client client = clientService.findByID(id);
+
+        if( !file.isEmpty() ){
+            String fileName =  id.toString() + "_" + UUID.randomUUID().toString() + "_" + file.getOriginalFilename().replace(" ", "");
+            Path pathFile = Paths.get("uploads").resolve(fileName).toAbsolutePath();
+            try {
+                Files.copy(file.getInputStream(), pathFile);
+            } catch ( IOException e){
+                e.printStackTrace();
+                response.put( "message", "Error while try to update user image: " + fileName );
+                response.put("error", e.getCause().getMessage());
+                return new ResponseEntity(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            String nameFileOld = client.getImg();
+            String messageDel = deletedOldImg( nameFileOld ) ? "The old image has been deleted" : "The old image can not deleted";
+            client.setImg( fileName );
+            clientService.save(client);
+            response.put("client", client);
+            response.put("message", "The image " + fileName + " has been uploaded successfully");
+            response.put("deleted", messageDel);
+        }
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    private Boolean deletedOldImg( String nameFileOld ) {
+        if( nameFileOld != null && nameFileOld.length() > 0){
+            Path pathImgOld = Paths.get("uploads").resolve(nameFileOld).toAbsolutePath();
+            File fileOld = pathImgOld.toFile();
+            if( fileOld.exists() && fileOld.canRead() ){
+                fileOld.delete();
+                return true;
+            }
+            return false;
+        }
+        return false;
     }
 }
