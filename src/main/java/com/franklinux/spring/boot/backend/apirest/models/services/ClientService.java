@@ -3,6 +3,8 @@ package com.franklinux.spring.boot.backend.apirest.models.services;
 import com.franklinux.spring.boot.backend.apirest.models.dao.IClientDAO;
 import com.franklinux.spring.boot.backend.apirest.models.entity.Client;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,9 @@ public class ClientService implements IClientService {
     public List<Client> findAll() {
         return (List<Client>) clientDAO.findAll();
     }
+
+    @Transactional
+    public Page<Client> findAll( Pageable pageable) { return  clientDAO.findAll( pageable ); }
 
     @Override
     @Transactional
